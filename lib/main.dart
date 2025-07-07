@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'screens/initial_setup_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar AdMob
+  await MobileAds.instance.initialize();
+  
+  // Inicializar serviço de notificações
   await NotificationService.initialize();
+  
   runApp(const TudoNaMaoApp());
 }
 

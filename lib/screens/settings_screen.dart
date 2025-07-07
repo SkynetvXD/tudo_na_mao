@@ -35,54 +35,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Salvar horário formatado corretamente
-    final formattedTime = '${_departureTime.hour.toString().padLeft(2, '0')}:${_departureTime.minute.toString().padLeft(2, '0')}';
-    await prefs.setString('departure_time', formattedTime);
-    await prefs.setInt('reminder_minutes', _reminderMinutes);
-    
-    await NotificationService.scheduleDailyReminder(
-      _departureTime,
-      _reminderMinutes,
-    );
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Configurações salvas!')),
-      );
-      Navigator.pop(context);
-    }
-  }
-
-  void _showTestNotificationSnackBar() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('🧪 Teste enviado! Deve aparecer imediatamente...'),
-        backgroundColor: Colors.blue,
-        duration: Duration(seconds: 4),
-      ),
-    );
-  }
-
-  void _showPermissionResult(bool isEnabled) {
-    if (!mounted) return;
-    if (isEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Notificações estão habilitadas!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('❌ Notificações desabilitadas. Abrir configurações?'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 4),
-        ),
-      );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Salvar configurações
+      final formattedTime = '${_departureTime.hour.toString().padLeft(2, '0')}:${_departureTime.minute.toString().padLeft(2, '0')}';
+      await prefs.setString('departure_time', formattedTime);
+      await prefs.setInt('reminder_minutes', _reminderMinutes);
+      
+      // Reconfigurar notificações
+      await NotificationService.scheduleDailyReminder(_departureTime, _reminderMinutes);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Configurações salvas!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -98,6 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Configuração do horário
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -151,6 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const SizedBox(height: 16),
             
+            // Configuração do lembrete
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -161,6 +144,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       'Lembrete',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Você receberá 2 lembretes: um no tempo selecionado antes da saída e outro no horário exato.',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -194,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const SizedBox(height: 16),
             
-            // Seção de testes e diagnósticos
+            // Teste básico de notificações
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -209,45 +200,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Verifique se as notificações estão funcionando corretamente',
+                      'Verifique se as notificações estão funcionando',
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 16),
                     
-                    // Botão de teste
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           await NotificationService.testNotification();
-                          _showTestNotificationSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('🧪 Teste enviado! Deve aparecer agora'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
                         },
                         icon: const Icon(Icons.notifications_active),
-                        label: const Text('Testar Notificação (Agora)'),
+                        label: const Text('Testar Notificação'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
+                          backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Botão para verificar permissões
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final isEnabled = await NotificationService.areNotificationsEnabled();
-                          _showPermissionResult(isEnabled);
-                          if (!isEnabled) {
-                            await Future.delayed(const Duration(seconds: 1));
-                            await NotificationService.openNotificationSettings();
-                          }
-                        },
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Verificar Permissões'),
                       ),
                     ),
                   ],
@@ -257,6 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const Spacer(),
             
+            // Botão salvar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

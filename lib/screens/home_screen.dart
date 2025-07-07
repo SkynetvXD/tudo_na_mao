@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/check_item.dart';
 import '../widgets/check_list_widget.dart';
+import '../widgets/ad_widget.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +20,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    
+    // Carregar anúncio intersticial
+    InterstitialAdManager.load();
+  }
+
+  @override
+  void dispose() {
+    // Mostrar anúncio intersticial ao sair (com frequência controlada)
+    InterstitialAdManager.show();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -129,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Tudo na Mão'),
-        backgroundColor: Colors.blue.shade600,
+        backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -222,6 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 onRemove: _removeItem,
               ),
             ),
+          ),
+          
+          // Espaço para anúncio
+          const BannerAdWidget(
+            isProduction: false, // Mude para true quando quiser anúncios reais
           ),
           
           // Botões de ação
